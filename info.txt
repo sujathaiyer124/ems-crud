@@ -1,0 +1,308 @@
+{% comment %} strconv.Itoa(i) (int to ASCII) to set an int to a string.
+strconv.Atoi(s) (ASCII to int) to set a string to an int.
+
+
+package main
+
+import (
+	"encoding/csv"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"task2/struct_emp"
+)
+
+func main() {
+	fmt.Println("Welcome to employee management system")
+	employees := []struct_emp.Employee{
+		{ID: 1, FirstName: "Sujatha", LastName: "Iyer", Email: "sujataiyer124@gmail.com", Password: "Password@123", PhoneNo: "2131231223", Role: "admin", Salary: 400000},
+		{ID: 3, FirstName: "Nikita", LastName: "Patil", Email: "nikipatil123@gmail.com", Password: "niki@124", PhoneNo: "4765289763", Role: "user", Salary: 300000},
+		{ID: 2, FirstName: "Joey", LastName: "Bin", Email: "joebin167@gmail.com", Password: "goe@8888", PhoneNo: "9394949494", Role: "user", Salary: 300000},
+		{ID: 4, FirstName: "Shital", LastName: "Patil", Email: "shitalvyas111@gmail.com", Password: "shi123e", PhoneNo: "9994448882", Role: "admin", Salary: 400000},
+	}
+
+	file, err := os.Create("emp.csv")
+	defer file.Close()
+	if err != nil {
+		log.Fatal("Failed to open the error")
+	}
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	headers := []string{"Id", "FirstName", "LastName", "Email", "Password", "Phoneno", "Role", "Salary"}
+
+	writer.Write(headers)
+	for _, e := range employees {
+		salarystr := strconv.FormatFloat(e.Salary, 'f', 2, 64)
+		data := []string{
+			strconv.Itoa(e.ID),
+			e.FirstName,
+			e.LastName,
+			e.Email,
+			e.PhoneNo,
+			e.Role,
+			salarystr,
+		}
+		writer.Write(data)
+	}
+}
+writer := csv.NewWriter(f)
+			for _, record := range data {
+				if err := writer.Write(record); err != nil {
+					log.Printf("Error writing record: %s", err.Error())
+				}
+			}
+			defer writer.Flush() {% endcomment %}
+			package employee
+
+			import (
+				"encoding/csv"
+				"encoding/json"
+				"fmt"
+				"log"
+				"math/rand"
+				"net/http"
+				"os"
+				"strconv"
+				"task2/struct_emp"
+				"time"
+			
+				"github.com/gorilla/mux"
+			)
+			
+			// create data in the csv file
+			func CreateEmployees(w http.ResponseWriter, r *http.Request, employee []struct_emp.Employee) {
+				fmt.Println("Create employee")
+				w.Header().Set("Content-Type", "application/json")
+				if r.Body == nil {
+					json.NewEncoder(w).Encode("Please send some data")
+				}
+				file, err := os.Create("emp.csv")
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer file.Close()
+				if err != nil {
+					log.Fatal("Failed to open the error")
+				}
+				writer := csv.NewWriter(file)
+				defer writer.Flush()
+			
+				headers := []string{"ID", "FirstName", "LastName", "Email", "Password", "Phoneno", "Role", "Salary"}
+				writer.Write(headers)
+				//var course struct_emp.Employee
+				var createemp []struct_emp.Employee
+				_ = json.NewDecoder(r.Body).Decode(&createemp)
+				if err != nil {
+					json.NewEncoder(w).Encode("No data inside Json")
+					return
+				}
+				//fmt.Printf("Decoded data: %+v\n", createemp)
+				createemp = append(employee, createemp...)
+				rand.Seed(time.Now().UnixNano())
+				var data []string
+				for _, e := range createemp {
+					salarystr := strconv.FormatFloat(e.Salary, 'f', 2, 64)
+					data = []string{
+						strconv.Itoa(rand.Intn(100)),
+						e.FirstName,
+						e.LastName,
+						e.Email,
+						e.Password,
+						e.PhoneNo,
+						e.Role,
+						salarystr,
+					}
+					if err := writer.Write(data); err != nil {
+						log.Fatal("Error writing record to CSV: ", err)
+					}
+			
+				}
+				json.NewEncoder(w).Encode(createemp)
+				json.NewEncoder(w).Encode("Data added successfully")
+			}
+			
+			// read data or view data that is in the file
+			func ReadEmployee(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				f, err := os.Open("emp.csv")
+				if err != nil {
+					log.Fatal("File is not opened")
+				}
+				defer f.Close()
+				reader := csv.NewReader(f)
+				data, err := reader.ReadAll()
+				if err != nil {
+					log.Fatal("Data not read", err)
+				}
+				var emp []struct_emp.Employee
+				for _, record := range data {
+					id, err := strconv.Atoi(record[0])
+					if err != nil {
+						log.Printf("Error converting ID to integer: %s", err.Error())
+						continue
+					}
+					salary, err := strconv.ParseFloat(record[7], 64)
+					if err != nil {
+						log.Printf("Error converting salary to integer: %s", err.Error())
+						continue
+					}
+					employees := struct_emp.Employee{
+						ID:        id,
+						FirstName: record[1],
+						LastName:  record[2],
+						Email:     record[3],
+						Password:  record[4],
+						PhoneNo:   record[5],
+						Role:      record[6],
+						Salary:    salary,
+					}
+					emp = append(emp, employees)
+				}
+				json.NewEncoder(w).Encode(emp)
+			}
+			
+			// update the data
+			func UpdateEmployee(w http.ResponseWriter, r *http.Request) {
+				fmt.Println("Update the employee data")
+				w.Header().Set("Content-Type", "application/json")
+				f, err := os.OpenFile("emp.csv", os.O_RDWR|os.O_APPEND, 0660)
+				if err != nil {
+					log.Fatal("File is not opened")
+				}
+				reader := csv.NewReader(f)
+				data, err := reader.ReadAll()
+				if err != nil {
+					log.Fatal("Data not read", err)
+				}
+				f.Close()
+			
+				e := os.Remove("emp.csv")
+				if e != nil {
+					log.Fatal(e)
+				}
+				params := mux.Vars(r)
+				id, err := strconv.Atoi(params["id"])
+				if err != nil {
+					log.Printf("Cannot convert from string to int hhhh %s", err.Error())
+				}
+				for index, record := range data {
+					recordIdStr := record[0] 
+					if recordIdStr == "" {
+						log.Println("Skipping empty string at index", index)
+						continue
+					}
+					if recordIdStr == "ID" {
+						log.Println("Skipping header row with value 'ID' at index", index)
+						continue
+					}
+					recordId, err := strconv.Atoi(recordIdStr)
+			
+					if err != nil {
+						log.Println("Error converting to integer at index", index)
+						log.Println("Value causing the error:", recordIdStr)
+						log.Println("Error details:", err)
+					}
+					if recordId == id {
+						data = append(data[:index], data[index+1:]...)
+						rand.Seed(time.Now().UnixNano())
+						file, err := os.Create("emp.csv")
+						if err != nil {
+							log.Fatal("File is not been created")
+						}
+						writer := csv.NewWriter(file)
+						defer writer.Flush()
+						// headers := []string{"ID", "FirstName", "LastName", "Email", "Password", "Phoneno", "Role", "Salary"}
+						// writer.Write(headers)
+						var employee []struct_emp.Employee
+			
+						err = json.NewDecoder(r.Body).Decode(&employee)
+						if err != nil {
+							log.Println("error is", err)
+							return
+						}
+						for _, emp := range employee {
+							data[index] = []string{
+								strconv.Itoa(rand.Intn(100)),
+								emp.FirstName,
+								emp.LastName,
+								emp.Email,
+								emp.Password,
+								emp.PhoneNo,
+								emp.Role,
+								strconv.FormatFloat(emp.Salary, 'f', 2, 64),
+							}
+							employee = append(employee, emp)
+							// if err := writer.Write(data[index]); err != nil {
+							// 	log.Fatal("Error writing record to CSV: ", err)
+							// }
+						}
+						writer.WriteAll(data)
+						log.Println("Employee after append:", employee)
+						json.NewEncoder(w).Encode(data)
+						return
+			
+					}
+			
+				}
+				json.NewEncoder(w).Encode("Employee not found")
+			}
+			
+			func DeleteEmployee(w http.ResponseWriter, r *http.Request){
+				fmt.Println("Update the employee data")
+				w.Header().Set("Content-Type", "application/json")
+				f, err := os.OpenFile("emp.csv", os.O_RDWR|os.O_APPEND, 0660)
+				if err != nil {
+					log.Fatal("File is not opened")
+				}
+				reader := csv.NewReader(f)
+				data, err := reader.ReadAll()
+				if err != nil {
+					log.Fatal("Data not read", err)
+				}
+				f.Close()
+			
+				e := os.Remove("emp.csv")
+				if e != nil {
+					log.Fatal(e)
+				}
+				params := mux.Vars(r)
+				id, err := strconv.Atoi(params["id"])
+				if err != nil {
+					log.Printf("Cannot convert from string to int hhhh %s", err.Error())
+				}
+				for index, record := range data {
+					recordIdStr := record[0] 
+					if recordIdStr == "" {
+						log.Println("Skipping empty string at index", index)
+						continue
+					}
+					if recordIdStr == "ID" {
+						log.Println("Skipping header row with value 'ID' at index", index)
+						continue
+					}
+					recordId, err := strconv.Atoi(recordIdStr)
+			
+					if err != nil {
+						log.Println("Error converting to integer at index", index)
+						log.Println("Value causing the error:", recordIdStr)
+						log.Println("Error details:", err)
+					}
+					if recordId == id {
+						data = append(data[:index], data[index+1:]...)
+						rand.Seed(time.Now().UnixNano())
+						file, err := os.Create("emp.csv")
+						if err != nil {
+							log.Fatal("File is not been created")
+						}
+						writer := csv.NewWriter(file)
+						defer writer.Flush()
+						writer.WriteAll(data)
+						//log.Println("Employee after append:", employee)
+						json.NewEncoder(w).Encode(data)
+						return
+					} 
+				}
+				json.NewEncoder(w).Encode("employee not found")
+			}
