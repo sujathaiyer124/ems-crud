@@ -63,16 +63,54 @@ func UpdateEmployee(w http.ResponseWriter, r *http.Request) {
 			defer file.Close()
 			writer := csv.NewWriter(file)
 			defer writer.Flush()
-			// headers := []string{"ID", "FirstName", "LastName", "Email", "Password", "Phoneno", "Role", "Salary"}
-			// writer.Write(headers)
+
 			var employee []models.Employee
 
 			err = json.NewDecoder(r.Body).Decode(&employee)
+			for _, e := range employee {
+				if len(e.FirstName) < 2 || len(e.FirstName) > 10 {
+					//fmt.Fprintln(w,len(emp.FirstName))
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintln(w, "FirstName should be between 3 to 10 letters")
+					return
+				}
+				if len(e.LastName) < 2 || len(e.LastName) > 10 {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintln(w, "LastName should be betwwen 3 to 10 letters")
+					return
+				}
+				if !validateEmail(e.Email) {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintln(w, "Email should be valid")
+					return
+				}
+				if !customPasswordValidation(e.Password) {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintln(w, "Invalid password. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
+					return
+				}
+				if len(e.PhoneNo) < 10 {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintln(w, "Phone number should have 10 numbers")
+					return
+				}
+				if e.Role != "admin" && e.Role != "user" {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintln(w, "Role must be admin or user")
+					return
+				}
+				if e.Salary <= 0.0 && e.Salary <= 0 {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintln(w, "Salary should not be smaller than or equal to 0")
+					return
+				}
+
+			}
 			if err != nil {
 				log.Println("error is", err)
 				return
 			}
-			for _, emp := range employee {
+			for i, emp := range employee {
 				data[index] = []string{
 					strconv.Itoa(id),
 					emp.FirstName,
@@ -83,7 +121,7 @@ func UpdateEmployee(w http.ResponseWriter, r *http.Request) {
 					emp.Role,
 					strconv.FormatFloat(emp.Salary, 'f', 2, 64),
 				}
-				employee = append(employee, emp)
+				employee[i] = emp
 			}
 			if index < len(employee) {
 				if index < len(employee)-1 {
@@ -97,14 +135,20 @@ func UpdateEmployee(w http.ResponseWriter, r *http.Request) {
 
 			writer.WriteAll(data)
 			log.Println("Employee after append:", employee)
-			json.NewEncoder(w).Encode("Employee updated successfully")
-			json.NewEncoder(w).Encode(data)
+			//fmt.Fprintln(w, "The details of the employee after update are:")
+			jsonData, err := json.Marshal(employee)
+			if err != nil {
+				log.Fatalf("Error encoding JSON: %s", err.Error())
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write(jsonData)
 			return
 
 		}
 
 	}
 	if !found {
+		w.WriteHeader(http.StatusBadRequest)
 		log.Println("ID not found")
 		json.NewEncoder(w).Encode("Employee not found")
 	}

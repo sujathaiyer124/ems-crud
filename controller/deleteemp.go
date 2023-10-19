@@ -68,12 +68,20 @@ func DeleteEmployee(w http.ResponseWriter, r *http.Request) {
 			defer writer.Flush()
 			writer.WriteAll(data)
 			log.Println("Employee deleted successfully")
-			json.NewEncoder(w).Encode("Employee deleted successfully.Remaining data are:")
-			json.NewEncoder(w).Encode(data)
+			
+			jsonData, err := json.Marshal(data)
+			if err != nil {
+				log.Fatalf("Error encoding JSON: %s", err.Error())
+			}
+			w.Header().Set("Content-Type", "application/json") 
+			w.WriteHeader(http.StatusOK)
+			w.Write(jsonData)
 			return
 		}
 	}
+
 	if !found {
+		w.WriteHeader(http.StatusBadRequest)
 		log.Println("Id not found")
 		json.NewEncoder(w).Encode("employee not found")
 	}

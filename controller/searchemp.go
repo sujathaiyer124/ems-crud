@@ -1,15 +1,16 @@
 package controller
 
 import (
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"encoding/csv"
-	"encoding/json"
 	"os"
-	"github.com/gorilla/mux"
 	"strconv"
 	"task2/models"
+
+	"github.com/gorilla/mux"
 )
 
 func SearchEmployee(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +34,7 @@ func SearchEmployee(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Cannot convert from string to int hhhh %s", err.Error())
 	}
 	for index, record := range data {
-		recordIdStr := record[0] 
+		recordIdStr := record[0]
 		if recordIdStr == "" {
 			log.Println("Skipping empty string at index", index)
 			continue
@@ -50,28 +51,35 @@ func SearchEmployee(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error details:", err)
 		}
 		if recordId == id {
-			  found =true
-				salary, err := strconv.ParseFloat(record[7], 64)
+			found = true
+			salary, err := strconv.ParseFloat(record[7], 64)
 			if err != nil {
 				log.Printf("Error converting salary to integer: %s", err.Error())
 				continue
 			}
-				employees := models.Employee{
-					ID:        id,
-					FirstName: record[1],
-					LastName:  record[2],
-					Email:     record[3],
-					Password:  record[4],
-					PhoneNo:   record[5],
-					Role:      record[6],
-					Salary:    salary,
-				}
-				json.NewEncoder(w).Encode("Search Employee details by ID:")
-				json.NewEncoder(w).Encode(employees)
+			employees := models.Employee{
+				ID:        id,
+				FirstName: record[1],
+				LastName:  record[2],
+				Email:     record[3],
+				Password:  record[4],
+				PhoneNo:   record[5],
+				Role:      record[6],
+				Salary:    salary,
 			}
+			fmt.Fprintln(w,"Speccific employee deatils are:")
+			jsonData, err := json.Marshal(employees)
+			if err != nil {
+				log.Fatalf("Error encoding JSON: %s", err.Error())
+			}
+			w.WriteHeader(http.StatusOK)
+			w.Write(jsonData)
+			return
+		}
 	}
-	if !found{
+	if !found {
+		w.WriteHeader(http.StatusBadRequest)
 		log.Println("Id not found")
-	json.NewEncoder(w).Encode("Id not found")
+		json.NewEncoder(w).Encode("Id not found")
 	}
 }

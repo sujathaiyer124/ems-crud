@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"task2/models"	
+	"task2/models"
 )
+
 func ReadEmployee(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	f, err := os.Open("emp.csv")
@@ -23,8 +24,9 @@ func ReadEmployee(w http.ResponseWriter, r *http.Request) {
 	}
 	var emp []models.Employee
 	for _, record := range data {
+		log.Println("Record:", record)
 		id, err := strconv.Atoi(record[0])
-		if err != nil {   //error yaha pe aa raha hai
+		if err != nil { //error yaha pe aa raha hai
 			log.Printf("Error converting ID to integer: %s", err.Error())
 			continue
 		}
@@ -46,6 +48,12 @@ func ReadEmployee(w http.ResponseWriter, r *http.Request) {
 		emp = append(emp, employees)
 		log.Println(emp)
 	}
-	json.NewEncoder(w).Encode("All the Employee details:")
-	json.NewEncoder(w).Encode(emp)
+
+	jsonData, err := json.Marshal(emp)
+	if err != nil {
+		log.Fatalf("Error encoding JSON: %s", err.Error())
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonData)
+
 }
