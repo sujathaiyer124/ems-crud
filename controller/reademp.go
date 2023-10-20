@@ -23,8 +23,8 @@ func ReadEmployee(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("Data not read", err)
 	}
 	var emp []models.Employee
-	for _, record := range data {
-		log.Println("Record:", record)
+	for i := 1; i < len(data); i++ {
+		record := data[i]
 		id, err := strconv.Atoi(record[0])
 		if err != nil { //error yaha pe aa raha hai
 			log.Printf("Error converting ID to integer: %s", err.Error())

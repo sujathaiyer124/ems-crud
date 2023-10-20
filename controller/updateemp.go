@@ -68,40 +68,24 @@ func UpdateEmployee(w http.ResponseWriter, r *http.Request) {
 
 			err = json.NewDecoder(r.Body).Decode(&employee)
 			for _, e := range employee {
-				if len(e.FirstName) < 2 || len(e.FirstName) > 10 {
-					//fmt.Fprintln(w,len(emp.FirstName))
+				if e.Salary <= 0 {
 					w.WriteHeader(http.StatusBadRequest)
-					fmt.Fprintln(w, "FirstName should be between 3 to 10 letters")
+					fmt.Fprintln(w, "Salary must be greater than 0")
 					return
 				}
-				if len(e.LastName) < 2 || len(e.LastName) > 10 {
+				if err := models.ValidateEmployee(e); err != nil {
 					w.WriteHeader(http.StatusBadRequest)
-					fmt.Fprintln(w, "LastName should be betwwen 3 to 10 letters")
+					w.Write([]byte(err.Error()))
 					return
 				}
-				if !validateEmail(e.Email) {
-					w.WriteHeader(http.StatusBadRequest)
-					fmt.Fprintln(w, "Email should be valid")
-					return
-				}
-				if !customPasswordValidation(e.Password) {
+				if !models.CustomPasswordValidation(e.Password) {
 					w.WriteHeader(http.StatusBadRequest)
 					fmt.Fprintln(w, "Invalid password. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
-					return
-				}
-				if len(e.PhoneNo) < 10 {
-					w.WriteHeader(http.StatusBadRequest)
-					fmt.Fprintln(w, "Phone number should have 10 numbers")
 					return
 				}
 				if e.Role != "admin" && e.Role != "user" {
 					w.WriteHeader(http.StatusBadRequest)
 					fmt.Fprintln(w, "Role must be admin or user")
-					return
-				}
-				if e.Salary <= 0.0 && e.Salary <= 0 {
-					w.WriteHeader(http.StatusBadRequest)
-					fmt.Fprintln(w, "Salary should not be smaller than or equal to 0")
 					return
 				}
 
@@ -110,7 +94,7 @@ func UpdateEmployee(w http.ResponseWriter, r *http.Request) {
 				log.Println("error is", err)
 				return
 			}
-			for i, emp := range employee {
+			for _, emp := range employee {
 				data[index] = []string{
 					strconv.Itoa(id),
 					emp.FirstName,
@@ -121,7 +105,7 @@ func UpdateEmployee(w http.ResponseWriter, r *http.Request) {
 					emp.Role,
 					strconv.FormatFloat(emp.Salary, 'f', 2, 64),
 				}
-				employee[i] = emp
+				employee = append(employee, emp)
 			}
 			if index < len(employee) {
 				if index < len(employee)-1 {

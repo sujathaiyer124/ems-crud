@@ -67,7 +67,6 @@ func SearchEmployee(w http.ResponseWriter, r *http.Request) {
 				Role:      record[6],
 				Salary:    salary,
 			}
-			fmt.Fprintln(w,"Speccific employee deatils are:")
 			jsonData, err := json.Marshal(employees)
 			if err != nil {
 				log.Fatalf("Error encoding JSON: %s", err.Error())

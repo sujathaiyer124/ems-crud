@@ -129,8 +129,8 @@ components:
           example: JohnSmith@swaggertheband.com
         password:
           type: string
-          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
-          example: pafhiwe2137!
+          pattern: "Password should more than 8 letters.It must contains atleast one uppercase,one lowercase,one special character,one number."
+          example: Pa!hiwe2137!
         phoneno:
           type: integer
           format: int64

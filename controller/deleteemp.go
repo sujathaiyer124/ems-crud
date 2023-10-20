@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"task2/models"
 	"time"
 
 	"github.com/gorilla/mux"
 )
+
 
 func DeleteEmployee(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Update the employee data")
@@ -68,18 +70,45 @@ func DeleteEmployee(w http.ResponseWriter, r *http.Request) {
 			defer writer.Flush()
 			writer.WriteAll(data)
 			log.Println("Employee deleted successfully")
-			
-			jsonData, err := json.Marshal(data)
-			if err != nil {
-				log.Fatalf("Error encoding JSON: %s", err.Error())
+			var result []models.Employee
+			for i := 1; i < len(data); i++ {
+				record := data[i]
+				if len(record) != 8 {
+					continue
+				}
+				id, err := strconv.Atoi(record[0])
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				salary, err := strconv.ParseFloat(record[7], 64)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				emp := models.Employee{
+					ID:        id,
+					FirstName: record[1],
+					LastName:  record[2],
+					Email:     record[3],
+					Password:  record[4],
+					PhoneNo:   record[5],
+					Role:      record[6],
+					Salary:    salary,
+				}
+				result = append(result, emp)
 			}
-			w.Header().Set("Content-Type", "application/json") 
+
+			jsonData, err := json.Marshal(result)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			//w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write(jsonData)
-			return
 		}
 	}
-
 	if !found {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Println("Id not found")

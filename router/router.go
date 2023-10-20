@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+
 	"task2/controller"
 	"task2/models"
 
@@ -9,7 +10,6 @@ import (
 )
 
 var employees []models.Employee
-
 
 func Router() *mux.Router {
 	r := mux.NewRouter()
