@@ -1,4 +1,4 @@
-package controller
+package searchemployee
 
 import (
 	"encoding/csv"
@@ -26,7 +26,7 @@ func SearchEmployee(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal("Data not read", err)
 	}
-	f.Close()
+	defer f.Close()
 	var found bool
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
